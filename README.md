@@ -3,7 +3,7 @@ IFFListMaker is a console based tool for AmigaOS. It creates compound IFF LIST f
 
 # Usage
 
-`IFFListMaker <TO=<output LIST file>> <TYPE=<id>> [PROP=<prop file>] [FILELIST=<path>] <FORM 1> <FORM 2> ...`
+`IFFListMaker <TO=<output LIST file>> <TYPE=<id>> [PROP=<prop file>] [FROM=<path>] <FORM 1> <FORM 2> ...`
 - TO/K/A – Output IFF LIST file. Required.
 - TYPE/K/A - IFF type of resulting LIST. All merged FORMs and optional PROP FORM **must** have this type. Required.
 - PROP/K – Optional IFF FORM file. All chunks inside the FORM are copied to PROP of the LIST.
