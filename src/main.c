@@ -53,6 +53,17 @@ void PrintErrorIFF(STRPTR message, LONG ifferr)
 
 /*---------------------------------------------------------------------------*/
 
+LONG PushProperties(struct App *app, LONG *argtab)
+{
+	BOOL result = RETURN_ERROR;
+	LONG ifferr;
+
+	return result;
+}
+
+
+/*---------------------------------------------------------------------------*/
+
 LONG PushListHeader(struct App *app, LONG *argtab)
 {
 	BOOL result = RETURN_ERROR;
@@ -60,6 +71,7 @@ LONG PushListHeader(struct App *app, LONG *argtab)
 
 	if ((ifferr = PushChunk(app->IFFOut, app->IFFType, ID_LIST, IFFSIZE_UNKNOWN)) == 0)
 	{
+		result = PushProperties(app, argtab);
 		if ((ifferr = PopChunk(app->IFFOut)) != 0) PrintErrorIFF("output", ifferr);
 	}
 	else PrintErrorIFF("output", ifferr);
