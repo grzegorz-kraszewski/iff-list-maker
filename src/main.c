@@ -2,6 +2,8 @@
 #include <proto/dos.h>
 #include <proto/iffparse.h>
 
+#include <dos/dos.h>
+
 extern struct Library *SysBase, *DOSBase;
 
 struct Library *IFFParseBase;
@@ -25,6 +27,14 @@ const UBYTE* const IFFErrors[11] = {
 	"not an IFF file",
 	"callback hook missing"
 };
+
+/* indexes in argument array */
+
+#define ARG_TO       0
+#define ARG_TYPE     1
+#define ARG_PROP     2
+#define ARG_FROM     3
+#define ARG_FILES    4
 
 /*---------------------------------------------------------------------------*/
 
@@ -53,10 +63,43 @@ void PrintErrorIFF(STRPTR message, LONG ifferr)
 
 /*---------------------------------------------------------------------------*/
 
+LONG PushFormsFromFileList(struct App *app, STRPTR filename)
+{
+	PrintError(0, ERROR_NOT_IMPLEMENTED);
+	return RETURN_ERROR;
+}
+/*---------------------------------------------------------------------------*/
+
+LONG PushFormsFromArgumentList(struct App *app, STRPTR *list)
+{
+}
+
+
+
+/*---------------------------------------------------------------------------*/
+
+LONG PushForms(struct App *app, LONG *argtab)
+{
+	LONG result;
+	
+	if (argtab[ARG_FROM]) result = PushFormsFromFileList(app, (STRPTR)argtab[ARG_FROM]);
+	else result = PushFormsFromArgumentList(app, (STRPTR*)argtab[ARG_FILES]);
+	
+	return result; 
+}
+
+/*---------------------------------------------------------------------------*/
+
 LONG PushProperties(struct App *app, LONG *argtab)
 {
 	BOOL result = RETURN_ERROR;
 	LONG ifferr;
+
+	if (argtab[ARG_PROP])
+	{
+		PrintError(0, ERROR_NOT_IMPLEMENTED);
+	}
+	else result = PushForms(app, argtab);
 
 	return result;
 }
@@ -88,7 +131,7 @@ LONG OpenOutput(struct App *app, LONG *argtab)
 
 	BPTR outfile;
 
-	if (outfile = Open((STRPTR)argtab[0], MODE_NEWFILE))
+	if (outfile = Open((STRPTR)argtab[ARG_TO], MODE_NEWFILE))
 	{
 		if (app->IFFOut = AllocIFF())
 		{
@@ -120,7 +163,7 @@ LONG CheckIFFType(LONG *argtab)
 	long result = RETURN_ERROR;
 	struct App app;
 
-	app.IFFType = *(LONG*)argtab[1];
+	app.IFFType = *(LONG*)argtab[ARG_TYPE];
 
 	if (GoodType(app.IFFType))
 	{
@@ -129,7 +172,7 @@ LONG CheckIFFType(LONG *argtab)
 	else
 	{
 		PutStr("IFFListMaker: '");
-		PutStr((STRPTR)argtab[1]);
+		PutStr((STRPTR)argtab[ARG_TYPE]);
 		PutStr("' is not a valid IFF FORM type\n");
 	}
 
