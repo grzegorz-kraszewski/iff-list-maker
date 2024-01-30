@@ -13,7 +13,6 @@ struct App
 	LONG IFFType;
 	struct IFFHandle *IFFIn;
 	struct IFFHandle *IFFOut;
-	LONG Error;
 	UBYTE *CopyBuf;
 };
 
@@ -59,31 +58,6 @@ STRPTR GetDOSErrorStr(LONG error)
 
 	Fault(error, "", buf, 128);
 	return buf + 2;               /* skips colon and space */
-}
-
-/*---------------------------------------------------------------------------*/
-
-void PrintError(STRPTR message, LONG code)
-{
-	if (code) PrintFault(code, "IFFListMaker");
-	else if (message) Printf("IFFListMaker: %s\n", message);
-}
-
-/*---------------------------------------------------------------------------*/
-
-void PrintErrorIFF(STRPTR message, LONG ifferr)
-{
-	ifferr = -ifferr - 1;   /* [-1 .. -11] translated to [0 .. 10] */
-	PutStr("IFFListMaker: ");
-	PutStr(message);
-	PutStr(", ");
-
-	if ((ifferr >= 0) && (ifferr < 11))
-	{
-		PutStr(IFFErrors[ifferr]);
-		PutStr("\n");
-	}
-	else PutStr("unknown error\n"); 
 }
 
 /*---------------------------------------------------------------------------*/
@@ -212,19 +186,22 @@ LONG PushFormsFromFileList(struct App *app, STRPTR filename)
 				result = PushFormFromFile(app, buf);
 			}
 
-			if (doserr = IoErr()) app->Error = doserr;
-			PrintError(NULL, app->Error);
+			if ((result == RETURN_OK) && (doserr = IoErr()))
+			{
+				Printf("Error reading list file: %s.\n", GetDOSErrorStr(doserr));
+			}
 
 			Close(file);
 		}
-		else PrintError(0, IoErr());
+		else Printf("Failed to open list file: %s.\n", GetDOSErrorStr(IoErr()));
 
 		FreeMem(buf, 1024);
 	}
-	else PrintError(0, ERROR_NO_FREE_STORE);
+	else PutStr("No memory for list file read buffer.\n");
 
 	return RETURN_ERROR;
 }
+
 /*---------------------------------------------------------------------------*/
 
 LONG PushFormsFromArgumentList(struct App *app, STRPTR *list)
@@ -261,7 +238,7 @@ LONG PushProperties(struct App *app, LONG *argtab)
 
 	if (argtab[ARG_PROP])
 	{
-		PrintError(0, ERROR_NOT_IMPLEMENTED);
+		PutStr("Injecting properties not implemented yet.\n");
 	}
 	else result = PushForms(app, argtab);
 
@@ -279,9 +256,11 @@ LONG PushListHeader(struct App *app, LONG *argtab)
 	if ((ifferr = PushChunk(app->IFFOut, app->IFFType, ID_LIST, IFFSIZE_UNKNOWN)) == 0)
 	{
 		result = PushProperties(app, argtab);
-		if ((ifferr = PopChunk(app->IFFOut)) != 0) PrintErrorIFF("output", ifferr);
+		if ((ifferr = PopChunk(app->IFFOut)) != 0) Printf("Failed to pop LIST chunk "
+		"from the output stack: %s.\n", GetIFFErrorStr(ifferr));
 	}
-	else PrintErrorIFF("output", ifferr);
+	else Printf("Failed to push LIST chunk to the output stack: %s.\n",
+	GetIFFErrorStr(ifferr));
 
 	return result;
 }
@@ -307,15 +286,15 @@ LONG OpenOutput(struct App *app, LONG *argtab)
 				result = PushListHeader(app, argtab);
 				CloseIFF(app->IFFOut);
 			}
-			else PrintErrorIFF("output", ifferr);
+			else Printf("Failed to open output IFF stream: %s.\n", GetIFFErrorStr(ifferr));
 
 			FreeIFF(app->IFFOut);
 		}
-		else PrintError(0, ERROR_NO_FREE_STORE);
+		else PutStr("No memory for output IFF handle.\n");
 
 		Close(outfile);
 	}
-	else PrintError(0, IoErr());
+	else Printf("Failed to open output file: %s.\n", GetDOSErrorStr(IoErr()));
 
 	return result;
 }
@@ -331,6 +310,7 @@ LONG GetCopyBuffer(struct App *app, LONG *argtab)
 		result = OpenOutput(app, argtab);
 		FreeMem(app->CopyBuf, COPYBUFSIZE);
 	}
+	else PutStr("No memory for copy buffer.\n");
 
 	return result;
 }
@@ -349,12 +329,7 @@ LONG CheckIFFType(LONG *argtab)
 	{
 		result = GetCopyBuffer(&app, argtab);
 	}
-	else
-	{
-		PutStr("IFFListMaker: '");
-		PutStr((STRPTR)argtab[ARG_TYPE]);
-		PutStr("' is not a valid IFF FORM type\n");
-	}
+	else Printf("'%s' is not a valid IFF FORM type.\n", argtab[ARG_TYPE]);
 
 	return result;
 }
@@ -372,7 +347,7 @@ LONG ParseArguments(void)
 		result = CheckIFFType(argtab);
 		FreeArgs(args);
 	}
-	else PrintError(NULL, IoErr());
+	else Printf("Failed to parse arguments: %s.\n", GetDOSErrorStr(IoErr()));
 
 	return result;
 }
@@ -388,7 +363,7 @@ LONG Main(void)
 		result = ParseArguments();
 		CloseLibrary(IFFParseBase);
 	}
-	else PrintError("failed to open iffparse.library v39+", 0);
+	else PutStr("Failed to open iffparse.library v39+.\n");
 
 	return result;
 }
