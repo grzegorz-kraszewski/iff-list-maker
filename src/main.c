@@ -100,30 +100,33 @@ LONG CopyLoop(struct App *app)
 
 /*---------------------------------------------------------------------------*/
 
-LONG CopyFormData(struct App *app)
+LONG CopyFormData(struct App *app, LONG what)
 {
 	LONG error = 0;
 	LONG result = RETURN_ERROR;
+	UBYTE idbuf[5];
 
-	if (!(error = PushChunk(app->IFFOut, app->IFFType, ID_FORM, IFFSIZE_UNKNOWN)))
+	IDtoStr(what, idbuf);
+
+	if (!(error = PushChunk(app->IFFOut, app->IFFType, what, IFFSIZE_UNKNOWN)))
 	{
 		result = CopyLoop(app);
 
 		if (error = PopChunk(app->IFFOut))
 		{
-			Printf("\tFailed to pop FORM chunk from output stack: %s.\n", GetIFFErrorStr(error));
+			Printf("\tFailed to pop %s chunk from output stack: %s.\n", idbuf, GetIFFErrorStr(error));
 			result = RETURN_ERROR;
 		}
 		else PutStr("\tDone.\n");
 	}
-	else Printf("/tFailed to push FORM chunk to output stack: %s.\n", GetIFFErrorStr(error));
+	else Printf("/tFailed to push %s chunk to output stack: %s.\n", idbuf, GetIFFErrorStr(error));
 
 	return result;
 }
 
 /*---------------------------------------------------------------------------*/
 
-LONG PushFormFromFile(struct App *app, STRPTR filename)
+LONG PushFromFile(struct App *app, STRPTR filename, LONG what)
 {
 	LONG result = RETURN_ERROR;
 	BPTR file;
@@ -145,7 +148,7 @@ LONG PushFormFromFile(struct App *app, STRPTR filename)
 				{
 					if ((ifferr = ParseIFF(app->IFFIn, IFFPARSE_SCAN)) == 0)
 					{
-						result = CopyFormData(app);
+						result = CopyFormData(app, what);
 					}
 					else Printf("IFF FORM chunk not found: %s.\n", (LONG)GetIFFErrorStr(ifferr));
 				}
@@ -183,7 +186,7 @@ LONG PushFormsFromFileList(struct App *app, STRPTR filename)
 			while ((result == RETURN_OK) && FGets(file, buf, 1024))
 			{
 				RTrim(buf);
-				result = PushFormFromFile(app, buf);
+				result = PushFromFile(app, buf, ID_FORM);
 			}
 
 			if ((result == RETURN_OK) && (doserr = IoErr()))
@@ -211,7 +214,7 @@ LONG PushFormsFromArgumentList(struct App *app, STRPTR *list)
 
 	while ((filename = *list++) && (result == RETURN_OK))
 	{
-		result = PushFormFromFile(app, filename);
+		result = PushFromFile(app, filename, ID_FORM);
 	}
 
 	return result;
@@ -233,15 +236,10 @@ LONG PushForms(struct App *app, LONG *argtab)
 
 LONG PushProperties(struct App *app, LONG *argtab)
 {
-	BOOL result = RETURN_ERROR;
-	LONG ifferr;
+	BOOL result = RETURN_OK;
 
-	if (argtab[ARG_PROP])
-	{
-		PutStr("Injecting properties not implemented yet.\n");
-	}
-	else result = PushForms(app, argtab);
-
+	if (argtab[ARG_PROP]) result = PushFromFile(app, (STRPTR)argtab[ARG_PROP], ID_PROP);
+	if (result == RETURN_OK) result = PushForms(app, argtab);
 	return result;
 }
 

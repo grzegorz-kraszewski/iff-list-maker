@@ -1,0 +1,47 @@
+IFFListMaker 1.0
+
+SYNOPSIS
+
+    TO/K/A,TYPE/K/A,PROP/K,FROM/K,FILES/M
+    IFFListMaker <TO=file> <TYPE=type> [PROP=file] [FROM=file] [file1 ...]
+
+FUNCTION
+
+    IFFListMaker is a tool for creating single IFF LIST file from specified
+    IFF FORM files of the same type. Optional PROP chunk for the LIST may be
+    created from separate IFF FORM.
+
+    Payload of input FORMs is copied without further parsing. Payload of FORM
+    containing desired LIST properties is copied into PROP without further
+    parsing too.
+
+INPUTS
+
+    TO - Output IFF LIST file. Required argument.
+    TYPE - IFF type of resulting list, as well as rerquired type of input
+        FORMs and FORM containing properties. Required argument. Must be valid
+        IFF type identifier.
+    PROP - Specifies IFF FORM file of matching type. All chunks from inside
+        the FORM are copied to PROP chunk of destination. Optional argument.
+        If not specified, PROP will not be inserted.
+    FROM - Specifies a plain text file containing list of IFF files to be
+        merged into LIST, one file per line. Optional argument. If present,
+        all input files specified in the rest of command line are ignored.
+	FILES - Input files specified as arguments.
+
+NOTES
+    Order of merged FORMS is preserved. Order of chunks inside them is preserved
+    as well.
+
+EXAMPLE
+    IFFListMaker TO=x.iff TYPE=WXYZ PROP=y.iff a.iff b.iff
+
+    creates following logical structure of output file 'x.iff':
+
+    LIST [length] WXYZ
+        PROP [length] WXYZ
+            <payload of 'y.iff' FORM>
+		FORM [length] WXYZ
+            <payload of 'a.iff' FORM>
+		FORM [lenght] WXYZ
+            <payload of 'b.iff' FORM>

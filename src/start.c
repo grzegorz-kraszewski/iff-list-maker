@@ -48,5 +48,6 @@ __saveds ULONG Start(void)
 }
 
 
-__attribute__((section(".text"))) UBYTE VString[] = "$VER: IFFListMaker 1.0 (29.01.2024)\r\n";
+__attribute__((section(".text"))) UBYTE VString[] = "$VER: IFFListMaker 1.0 (31.01.2024)\r\n";
+
 UBYTE DOSName[] = "dos.library";
